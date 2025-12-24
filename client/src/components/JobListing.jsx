@@ -1,37 +1,62 @@
 import React, { useContext } from 'react'
 import { AppContext } from '../context/AppContext'
-import { assets } from '../assets/assets'
+import { assets, JobCategories, JobLocations } from '../assets/assets'
 
 const JobListing = () => {
     const { searchFilter, isSearched, setSearchfilter } = useContext(AppContext)
   return (
-    <div>
+    <div className='container 2xl:px-20 mx-auto flex flex-col lg:flex-row max-lg:space-y-8 py-8'>
       {/* side bar*/}
-    <div>
+      <div className='w-full lg:w-1/4 bg-white px-4'>
         {/*seearchfilter from hero component */}
         {isSearched && (searchFilter.title !== "" || searchFilter.location !== "") && (
-            <>
-            <h3>Current search</h3>
-            <div>
-                {searchFilter.title && (
-                    <span>
-                        Title: {searchFilter.title}
-                        <img onClick={() => setSearchfilter({...searchFilter, title: ""})} className="cursor-pointer" src={assets.cross_icon} alt="cross icon" />
-                    </span>
-                )}
-                {searchFilter.location && (
-                    <span>
-                        Location: {searchFilter.location}
-                     <img onClick={() => setSearchfilter({...searchFilter, location: ""})}  
-                      className="cursor-pointer" src={assets.cross_icon} alt="cross icon" />
-
-                    </span>
-                )}
+          <>
+            <h3 className='font-medium text-lg mb-4'>Current search</h3>
+            <div className='mb-4 text-gray-600 flex flex-row items-center gap-2'>
+              {searchFilter.title && (
+                <span className='inline-flex items-center gap-1 bg-white border border-blue-200 px-2 py-0.5 rounded text-xs'>
+                   {searchFilter.title}
+                  <img onClick={() => setSearchfilter({ ...searchFilter, title: "" })} className="cursor-pointer w-3 h-3" src={assets.cross_icon} alt="cross icon" />
+                </span>
+              )}
+              {searchFilter.location && (
+                <span className='inline-flex items-center gap-1 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-xs'>
+                 {searchFilter.location}
+                  <img onClick={() => setSearchfilter({ ...searchFilter, location: "" })} className="cursor-pointer w-3 h-3" src={assets.cross_icon} alt="cross icon" />
+                </span>
+              )}
             </div>
-            </>
+          </>
         )}
 
-    </div>
+        {/*Category Filter*/} 
+      <div className='max-lg:hidden'>
+        <h4 className='font-medium text-lg py-4'>Search by Categories</h4>
+        <ul className='space-y-4 text-gray-600'>
+            {JobCategories.map((category, index) => (
+              <li className="flex gap-3 items-center" key={index}>
+                <input className='scale-125' type="checkbox" />
+                {category}
+              </li>
+            ))}
+        </ul>
+      </div>
+      {/*Search by location */}
+      <div className='max-lg:hidden'>
+        <h4 className='font-medium text-lg py-4'>Search by Locations</h4>
+        <ul className='space-y-4 text-gray-600'>
+            {JobLocations.map((location, index) => (
+              <li className="flex gap-3 items-center" key={index}>
+                <input className='scale-125' type="checkbox" />
+                {location}
+              </li>
+            ))}
+        </ul>
+      </div>
+      </div>
+      
+      
+
     </div>
   )
 }

@@ -10,9 +10,9 @@ const Navbar = () => {
   return (
     <div className='shadow py-4'>
       <div className='container px-4 2xl:px-20 mx-auto flex justify-between items-center'>
-        <div className='flex items-center'>
+        <Link to='/' className='flex items-center'>
           <img src={assets.logo} alt="Insiderjobs" className='cursor-pointer' />
-        </div>
+        </Link>
 
         {
           isSignedIn

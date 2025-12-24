@@ -1,4 +1,4 @@
-import React, { useState,useContext } from 'react'
+import React, { useState,useContext, useEffect } from 'react'
 import { AppContext } from '../context/AppContext'
 import { assets, JobCategories, JobLocations } from '../assets/assets'
 import JobCard from './JobCard'
@@ -7,7 +7,51 @@ const JobListing = () => {
     const { searchFilter, isSearched, setSearchfilter, jobs } = useContext(AppContext)
     const [showFilter, setShowFilter] = useState(true)
     const [currentPage, setCurrentPage] = useState(1)
+    const [selectedCategories, setSelectedCategories] = useState([])
+    const [selectedLocations, setSelectedLocations] = useState([])
+    const [filteredJobs, setFilteredJobs] = useState(jobs)
+
+    const handleCategoryChange = (category)=>{
+        setSelectedCategories(
+            prev => {
+                if(prev.includes(category)){
+                    return prev.filter(cat => cat !== category)
+                }else{
+                    return [...prev, category]
+                }
+            }
+        )
+    }
+
+    const handleLocationChange = (location)=>{
+        setSelectedLocations(
+            prev => {
+                if(prev.includes(location)){
+                    return prev.filter(loc => loc !== location)
+                }else{
+                    return [...prev, location]
+                }
+            }
+        )
+    }
+
+   useEffect(()=>{
+    const matchesCategory = (job) => {
+        if (selectedCategories.length === 0) return true;
+        return selectedCategories.includes(job.category);
+    }
+    const matchesLocation = (job) => {
+        if (selectedLocations.length === 0) return true;
+        return selectedLocations.includes(job.location);
+    }
+    const matchesTitle = (job) => {
+        if (searchFilter.title === "") return true;
+        return job.title.toLowerCase().includes(searchFilter.title.toLowerCase());
+    }
+   },[])
+
     const jobsPerPage = 6;
+
     const totalPages = Math.ceil(jobs.length / jobsPerPage);
     const startIdx = (currentPage - 1) * jobsPerPage;
     const endIdx = startIdx + jobsPerPage;
@@ -47,8 +91,10 @@ const JobListing = () => {
         <ul className='space-y-4 text-gray-600'>
             {JobCategories.map((category, index) => (
               <li className="flex gap-3 items-center" key={index}>
-                <input className='scale-125' type="checkbox" />
+                <input onChange={() => handleCategoryChange(category)} className='scale-125' type="checkbox" 
+                checked={selectedCategories.includes(category)} />
                 {category}
+                
               </li>
             ))}
         </ul>
@@ -59,7 +105,9 @@ const JobListing = () => {
         <ul className='space-y-4 text-gray-600'>
             {JobLocations.map((location, index) => (
               <li className="flex gap-3 items-center" key={index}>
-                <input className='scale-125' type="checkbox" />
+                <input onChange={() => handleLocationChange(location)} className='scale-125' type="checkbox" 
+                checked={selectedLocations.includes(location)} />
+                
                 {location}
               </li>
             ))}
@@ -70,12 +118,12 @@ const JobListing = () => {
       {/* job listings */}
 
       <section className='w-full lg:33/4 text-gray-800 max-lg:px-4'>
-        <h3 className='font-medium text-3xl py-2' id ='job-list'>Latest Jobs</h3>
-        <p className='mb-8'>Get your dream job here</p>
-        <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 '>
-            {currentJobs.map((job,index)=>(
-                <JobCard key={index} job={job} />
-            ))}
+        <h3 className='font-bold text-3xl py-2 mb-2 tracking-tight' id='job-list'>Latest Jobs</h3>
+        <p className='mb-8 text-gray-500'>Get your dream job here</p>
+        <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8'>
+          {currentJobs.map((job, index) => (
+            <JobCard key={index} job={job} />
+          ))}
         </div>
 
         {/* pagination */}

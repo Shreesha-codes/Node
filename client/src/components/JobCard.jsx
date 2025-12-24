@@ -1,25 +1,21 @@
 import React from 'react'
 import { assets } from '../assets/assets.js'
 
-const JobCard = ({job}) => {
+const JobCard = ({ job }) => {
   return (
-    <div className='border-radius-600 p-2 shadow rounded'>
-      <div className='flex justify-between items-center '>
-       <img src={assets.company_icon} alt="Company Logo" />
+    <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-3 transition-transform duration-200 hover:scale-[1.03] hover:shadow-xl">
+      <div className="flex items-center gap-3 mb-2">
+        <img src={assets.company_icon} alt="Company Logo" className="h-10 w-10 rounded-full shadow" />
+        <h4 className="font-semibold text-lg text-blue-700">{job.title}</h4>
       </div>
-      <h4 className='flex items-center font-medium text-xl mt-2'>{job.title}</h4>
-      <div className='flex items-center gap-3 mt-3 text-xs '>
-        <span className='bg-blue-50 border border-blue-200 px-4 py-1.5 rounded'>
-            {job.location}
-        </span>
-        <span className='bg-red-50 border border-red-200 px-4 py-1.5 rounded'>
-            {job.level}
-        </span>
+      <div className="flex gap-4 text-sm text-gray-500 mb-2">
+        <span className="bg-blue-50 px-2 py-1 rounded-full">{job.location}</span>
+        <span className="bg-gray-100 px-2 py-1 rounded-full">{job.level}</span>
       </div>
-      <p className='text-gray-500 text-sm mt-4' dangerouslySetInnerHTML={{__html:job.description.slice(0,150)}}></p>
-      <div className='mt-4 flex gap-4 text-sm'>
-        <button className='bg-blue-600 text-white px-4 py-2 rounded'>Apply Now</button>
-        <button className='text-gray-500 border gray-500 px-4 py-2'>Learn More</button>
+      <p className="text-gray-700 text-sm mb-2" dangerouslySetInnerHTML={{ __html: job.description.slice(0, 150) + '...' }}></p>
+      <div className="flex gap-3 mt-auto">
+        <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium shadow transition-all duration-200">Apply Now</button>
+        <button className="bg-gray-100 hover:bg-gray-200 text-blue-700 px-4 py-2 rounded-lg font-medium shadow transition-all duration-200">Learn More</button>
       </div>
     </div>
   )

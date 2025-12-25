@@ -13,16 +13,17 @@ import ApplicationDetail from './pages/ApplicationDetail.jsx'
 const App = () => {
   return (
     <div>
-     <Routes>
-      <Route path="/" element={<Home/>}/>
-      <Route path="/applications" element={<Applications/>}/>
-      <Route path="/apply-job/:id" element={<ApplyJob/>}/>
-      <Route path="/dashboard" element={<Dashboard/>}/>
-      <Route path="/manage-jobs" element={<ManageJobs/>}/>
-      <Route path="/add-job" element={<AddJob/>}/>
-      <Route path="/view-applications" element={<ViewApplications/>}/>
-      <Route path="/application/:id" element={<ApplicationDetail/>}/>
-     </Routes>
+    <Routes>
+     <Route path="/" element={<Home/>}/>
+     <Route path="/applications" element={<Applications/>}/>
+     <Route path="/apply-job/:id" element={<ApplyJob/>}/>
+     <Route path="/dashboard" element={<Dashboard/>}/>
+     <Route path="/manage-jobs" element={<ManageJobs/>}/>
+     <Route path="/add-job" element={<AddJob/>}/>
+     <Route path="/view-applications" element={<ViewApplications/>}/>
+     <Route path="/application/:id" element={<ApplicationDetail/>}/>
+
+    </Routes>
     </div>
   )
 }

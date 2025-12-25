@@ -1,12 +1,52 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { viewApplicationsPageData } from '../assets/assets'
 
 const ViewApplications = () => {
   const navigate = useNavigate()
-  const [applications, setApplications] = useState(viewApplicationsPageData)
+  const location = useLocation()
+  const [applications, setApplications] = useState(() => {
+    // Process location state action during initial state setup
+    if (location.state?.action && location.state?.applicationId) {
+      const { action, applicationId } = location.state
+      if (action === 'accept') {
+        return viewApplicationsPageData.map(app =>
+          app._id === applicationId ? { ...app, status: 'Accepted' } : app
+        )
+      } else if (action === 'reject') {
+        return viewApplicationsPageData.filter(app => app._id !== applicationId)
+      }
+    }
+    return viewApplicationsPageData
+  })
   const [filter, setFilter] = useState('all')
+
+  const getTodayDate = () => {
+    const d = new Date()
+    return d.toLocaleDateString('en-GB', {
+      year: 'numeric', month: 'short', day: 'numeric'
+    })
+  }
+
+  const handleAccept = (id) => {
+    setApplications(prev => prev.map(app =>
+      app._id === id
+        ? { ...app, status: 'Accepted', appliedDate: getTodayDate() }
+        : app
+    ))
+  }
+
+  const handleReject = (id) => {
+    setApplications(prev => prev.filter(app => app._id !== id))
+  }
+
+  // Clear navigation state after processing
+  useEffect(() => {
+    if (location.state?.action && location.state?.applicationId) {
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   const filteredApplications = applications.filter(app => {
     if (filter === 'all') return true
@@ -85,16 +125,25 @@ const ViewApplications = () => {
                       </td>
                       <td className='px-6 py-4 text-gray-700'>{application.jobTitle}</td>
                       <td className='px-6 py-4 text-gray-600'>
-                        <div className='flex items-center gap-1'>
-                          <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                          </svg>
-                          {application.location}
+                        <div className='flex flex-col gap-1'>
+                          <div className='flex items-center gap-1'>
+                            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                            </svg>
+                            {application.location}
+                          </div>
+                          <span className='text-xs text-gray-500'>
+                            {application.appliedDate ? application.appliedDate : 'Applied: -'}
+                          </span>
                         </div>
                       </td>
                       <td className='px-6 py-4'>
-                        <span className='inline-flex items-center bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium border border-yellow-200'>
-                          Pending Review
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
+                          application.status === 'Accepted' 
+                            ? 'bg-green-100 text-green-700 border-green-200' 
+                            : 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                        }`}>
+                          {application.status || 'Pending Review'}
                         </span>
                       </td>
                       <td className='px-6 py-4'>
@@ -105,16 +154,28 @@ const ViewApplications = () => {
                           >
                             Review
                           </button>
-                          <button className='text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg transition-colors' title='Accept'>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </button>
-                          <button className='text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors' title='Reject'>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                          {application.status !== 'Accepted' && (
+                            <>
+                              <button 
+                                onClick={() => handleAccept(application._id)}
+                                className='text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg transition-colors' 
+                                title='Accept'
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                              <button 
+                                onClick={() => handleReject(application._id)}
+                                className='text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors' 
+                                title='Reject'
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -9,6 +9,19 @@ import { jobsApplied } from '../assets/assets.js';
 const Applications = () => {
   const [isEdit, setIsEdit] = useState(false)
   const [resume, setResume] = useState(null)
+  const [appliedJobs, setAppliedJobs] = useState(jobsApplied)
+
+  const handleAccept = (index) => {
+    const updatedJobs = [...appliedJobs]
+    updatedJobs[index].status = 'Accepted'
+    setAppliedJobs(updatedJobs)
+  }
+
+  const handleReject = (index) => {
+    const updatedJobs = appliedJobs.filter((_, i) => i !== index)
+    setAppliedJobs(updatedJobs)
+  }
+
   return (
     <>
       <Navbar />
@@ -35,6 +48,9 @@ const Applications = () => {
                     className='hidden'
                   />
                 </label>
+                {resume && (
+                  <span className='text-sm text-gray-600'>{resume.name}</span>
+                )}
                 <button 
                   onClick={() => setIsEdit(false)} 
                   className='bg-green-50 text-green-700 border border-green-300 rounded-lg px-6 py-2.5 hover:bg-green-100 hover:shadow-md transition-all duration-200 font-medium'
@@ -75,10 +91,11 @@ const Applications = () => {
                   <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>Location</th>
                   <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>Date</th>
                   <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>Status</th>
+                  <th className='px-6 py-4 text-left text-sm font-semibold text-gray-700'>Actions</th>
                 </tr>
               </thead>
               <tbody className='divide-y divide-gray-200'>
-                {jobsApplied.map((job, index) => (
+                {appliedJobs.map((job, index) => (
                   <tr key={index} className='hover:bg-gray-50 transition-colors duration-150'>
                     <td className='px-6 py-4'>
                       <div className='flex items-center gap-3'>
@@ -99,6 +116,30 @@ const Applications = () => {
                       }`}>
                         {job.status}
                       </span>
+                    </td>
+                    <td className='px-6 py-4'>
+                      {job.status === 'Pending' && (
+                        <div className='flex items-center gap-2'>
+                          <button 
+                            onClick={() => handleAccept(index)}
+                            className='bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors shadow-sm hover:shadow-md'
+                            title='Accept'
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={() => handleReject(index)}
+                            className='bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors shadow-sm hover:shadow-md'
+                            title='Reject'
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

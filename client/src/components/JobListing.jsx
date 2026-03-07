@@ -30,6 +30,12 @@ const JobListing = () => {
 
     // Memoize filtered jobs
     const filteredJobs = useMemo(() => {
+        // Ensure jobs is always an array
+        if (!Array.isArray(jobs)) {
+            console.warn('Jobs is not an array:', jobs);
+            return [];
+        }
+        
         const matchesCategory = (job) => {
             if (selectedCategories.length === 0) return true;
             return selectedCategories.includes(job.category);

@@ -1,5 +1,7 @@
 import React from  'react'
 import {Routes,Route} from "react-router-dom"
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import Home from './pages/Home.jsx'
 import Applications from './pages/Applications.jsx'
 import ApplyJob from './pages/Applyjob.jsx'
@@ -13,6 +15,18 @@ import ApplicationDetail from './pages/ApplicationDetail.jsx'
 const App = () => {
   return (
     <div>
+    <ToastContainer 
+      position="top-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="light"
+    />
     <Routes>
      <Route path="/" element={<Home/>}/>
      <Route path="/applications" element={<Applications/>}/>

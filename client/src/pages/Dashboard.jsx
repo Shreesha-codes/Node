@@ -1,13 +1,61 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import Navbar from '../components/Navbar'
-import { manageJobsData, viewApplicationsPageData } from '../assets/assets'
+import { companyAPI } from '../services/api'
+import { getCompanyToken, isCompanyAuthenticated } from '../utils/auth'
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const totalJobs = manageJobsData.length
-  const totalApplicants = manageJobsData.reduce((sum, job) => sum + job.applicants, 0)
-  const recentApplications = viewApplicationsPageData.slice(0, 5)
+  const [loading, setLoading] = useState(true)
+  const [dashboardData, setDashboardData] = useState({
+    totalJobs: 0,
+    totalApplications: 0,
+    activeJobs: 0,
+    avgApplicantsPerJob: 0,
+    recentApplications: []
+  })
+
+  useEffect(() => {
+    // Check if company is authenticated
+    if (!isCompanyAuthenticated()) {
+      toast.error('Please login as a company to access dashboard')
+      navigate('/')
+      return
+    }
+    fetchDashboardData()
+  }, [navigate])
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      const token = getCompanyToken()
+      const response = await companyAPI.getDashboard(token)
+      
+      if (response.success) {
+        setDashboardData(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard:', error)
+      toast.error('Failed to load dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className='container px-4 min-h-[65vh] 2xl:px-20 mx-auto my-10 flex items-center justify-center'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
+            <p className='text-gray-600 mt-4'>Loading dashboard...</p>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -30,7 +78,7 @@ const Dashboard = () => {
                 </svg>
               </div>
             </div>
-            <h3 className='text-4xl font-bold text-gray-800 mb-1'>{totalJobs}</h3>
+            <h3 className='text-4xl font-bold text-gray-800 mb-1'>{dashboardData.totalJobs}</h3>
             <p className='text-gray-600 text-sm'>Total Jobs Posted</p>
           </div>
 
@@ -42,7 +90,7 @@ const Dashboard = () => {
                 </svg>
               </div>
             </div>
-            <h3 className='text-4xl font-bold text-gray-800 mb-1'>{totalApplicants}</h3>
+            <h3 className='text-4xl font-bold text-gray-800 mb-1'>{dashboardData.totalApplications}</h3>
             <p className='text-gray-600 text-sm'>Total Applicants</p>
           </div>
 
@@ -54,7 +102,7 @@ const Dashboard = () => {
                 </svg>
               </div>
             </div>
-            <h3 className='text-4xl font-bold text-gray-800 mb-1'>{totalJobs}</h3>
+            <h3 className='text-4xl font-bold text-gray-800 mb-1'>{dashboardData.activeJobs}</h3>
             <p className='text-gray-600 text-sm'>Active Positions</p>
           </div>
 
@@ -66,9 +114,7 @@ const Dashboard = () => {
                 </svg>
               </div>
             </div>
-            <h3 className='text-4xl font-bold text-gray-800 mb-1'>
-              {Math.round(totalApplicants / totalJobs) || 0}
-            </h3>
+            <h3 className='text-4xl font-bold text-gray-800 mb-1'>{dashboardData.avgApplicantsPerJob}</h3>
             <p className='text-gray-600 text-sm'>Avg per Job</p>
           </div>
         </div>
@@ -139,26 +185,38 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className='divide-y divide-gray-200'>
-                {recentApplications.map((application) => (
-                  <tr key={application._id} className='hover:bg-gray-50 transition-colors duration-150'>
-                    <td className='px-6 py-4'>
-                      <div className='flex items-center gap-3'>
-                        <img src={application.imgSrc} alt={application.name} className='w-10 h-10 rounded-full shadow-sm' />
-                        <span className='font-medium text-gray-800'>{application.name}</span>
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 text-gray-700'>{application.jobTitle}</td>
-                    <td className='px-6 py-4 text-gray-600'>{application.location}</td>
-                    <td className='px-6 py-4'>
-                      <button 
-                        onClick={() => navigate(`/application/${application._id}`)}
-                        className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors'
-                      >
-                        Review
-                      </button>
+                {dashboardData.recentApplications && dashboardData.recentApplications.length > 0 ? (
+                  dashboardData.recentApplications.map((application) => (
+                    <tr key={application._id} className='hover:bg-gray-50 transition-colors duration-150'>
+                      <td className='px-6 py-4'>
+                        <div className='flex items-center gap-3'>
+                          <div className='w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center'>
+                            <span className='text-blue-600 font-semibold'>
+                              {application.name?.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className='font-medium text-gray-800'>{application.name}</span>
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 text-gray-700'>{application.jobId?.title || 'N/A'}</td>
+                      <td className='px-6 py-4 text-gray-700'>{application.jobId?.location || 'N/A'}</td>
+                      <td className='px-6 py-4'>
+                        <button
+                          onClick={() => navigate(`/application/${application._id}`)}
+                          className='text-blue-600 hover:text-blue-700 font-medium text-sm'
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan='4' className='px-6 py-8 text-center text-gray-500'>
+                      No applications yet. Post jobs to receive applications!
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

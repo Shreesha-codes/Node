@@ -1,10 +1,18 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import Navbar from '../components/Navbar'
 import { JobCategories, JobLocations } from '../assets/assets'
+import { jobAPI } from '../services/api'
+import { getCompanyToken, isCompanyAuthenticated } from '../utils/auth'
 
 const AddJob = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const jobId = searchParams.get('id')
+  const [loading, setLoading] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+  
   const [formData, setFormData] = useState({
     title: '',
     location: '',
@@ -16,6 +24,42 @@ const AddJob = () => {
     responsibilities: ''
   })
 
+  useEffect(() => {
+    if (!isCompanyAuthenticated()) {
+      toast.error('Please login as a company to post jobs')
+      navigate('/')
+      return
+    }
+
+    // If editing existing job
+    if (jobId) {
+      setIsEditMode(true)
+      fetchJobDetails(jobId)
+    }
+  }, [jobId, navigate])
+
+  const fetchJobDetails = async (id) => {
+    try {
+      const response = await jobAPI.getJobById(id)
+      if (response.success) {
+        const job = response.data
+        setFormData({
+          title: job.title || '',
+          location: job.location || '',
+          category: job.category || '',
+          level: job.level || '',
+          salary: job.salary || '',
+          description: job.description || '',
+          requirements: job.requirements || '',
+          responsibilities: job.responsibilities || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching job:', error)
+      toast.error('Failed to load job details')
+    }
+  }
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -23,12 +67,34 @@ const AddJob = () => {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log('Job Posted:', formData)
-    // Add logic to submit job data
-    alert('Job posted successfully!')
-    navigate('/manage-jobs')
+    setLoading(true)
+
+    try {
+      const token = getCompanyToken()
+      
+      if (isEditMode && jobId) {
+        // Update existing job
+        const response = await jobAPI.updateJob(jobId, formData, token)
+        if (response.success) {
+          toast.success('Job updated successfully!')
+          navigate('/manage-jobs')
+        }
+      } else {
+        // Create new job
+        const response = await jobAPI.createJob(formData, token)
+        if (response.success) {
+          toast.success('Job posted successfully!')
+          navigate('/manage-jobs')
+        }
+      }
+    } catch (error) {
+      console.error('Error saving job:', error)
+      toast.error(error.message || 'Failed to save job')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -37,8 +103,12 @@ const AddJob = () => {
       <div className='container px-4 min-h-[65vh] 2xl:px-20 mx-auto my-10'>
         {/* Header */}
         <div className='mb-8'>
-          <h1 className='text-3xl font-bold text-gray-800'>Post a New Job</h1>
-          <p className='text-gray-600 mt-1'>Fill in the details to create a new job posting</p>
+          <h1 className='text-3xl font-bold text-gray-800'>
+            {isEditMode ? 'Edit Job' : 'Post a New Job'}
+          </h1>
+          <p className='text-gray-600 mt-1'>
+            {isEditMode ? 'Update job details' : 'Fill in the details to create a new job posting'}
+          </p>
         </div>
 
         {/* Form */}
@@ -186,13 +256,14 @@ const AddJob = () => {
             <div className='flex gap-4 pt-4'>
               <button
                 type='submit'
-                className='bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold shadow-md transition-all duration-200 transform hover:scale-[1.02]'
+                disabled={loading}
+                className='bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold shadow-md transition-all duration-200 transform hover:scale-[1.02] disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none'
               >
-                Post Job
+                {loading ? 'Saving...' : (isEditMode ? 'Update Job' : 'Post Job')}
               </button>
               <button
                 type='button'
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/manage-jobs')}
                 className='bg-gray-100 hover:bg-gray-200 text-gray-700 px-8 py-3 rounded-lg font-semibold transition-all duration-200'
               >
                 Cancel

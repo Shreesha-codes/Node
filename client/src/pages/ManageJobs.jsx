@@ -1,20 +1,75 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import Navbar from '../components/Navbar'
-import { manageJobsData } from '../assets/assets'
+import { companyAPI, jobAPI } from '../services/api'
+import { getCompanyToken, isCompanyAuthenticated } from '../utils/auth'
 
 const ManageJobs = () => {
-  const [jobs, setJobs] = useState(manageJobsData)
+  const navigate = useNavigate()
+  const [jobs, setJobs] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!isCompanyAuthenticated()) {
+      toast.error('Please login as a company to manage jobs')
+      navigate('/')
+      return
+    }
+    fetchCompanyJobs()
+  }, [navigate])
+
+  const fetchCompanyJobs = async () => {
+    try {
+      setLoading(true)
+      const token = getCompanyToken()
+      const response = await companyAPI.getManageJobs(token)
+      
+      if (response.success) {
+        setJobs(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error)
+      toast.error('Failed to load jobs')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const formatDate = (timestamp) => {
     const date = new Date(timestamp)
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this job?')) {
-      setJobs(jobs.filter(job => job._id !== id))
+      try {
+        const token = getCompanyToken()
+        const response = await jobAPI.deleteJob(id, token)
+        
+        if (response.success) {
+          toast.success('Job deleted successfully')
+          setJobs(jobs.filter(job => job._id !== id))
+        }
+      } catch (error) {
+        console.error('Error deleting job:', error)
+        toast.error('Failed to delete job')
+      }
     }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className='container px-4 min-h-[65vh] 2xl:px-20 mx-auto my-10 flex items-center justify-center'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
+            <p className='text-gray-600 mt-4'>Loading jobs...</p>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return (
@@ -114,51 +169,55 @@ const ManageJobs = () => {
                 </tr>
               </thead>
               <tbody className='divide-y divide-gray-200'>
-                {jobs.map((job, index) => (
-                  <tr key={job._id} className='hover:bg-gray-50 transition-colors duration-150'>
-                    <td className='px-6 py-4 text-gray-700 font-medium'>{index + 1}</td>
-                    <td className='px-6 py-4'>
-                      <span className='font-medium text-gray-800'>{job.title}</span>
-                    </td>
-                    <td className='px-6 py-4 text-gray-600'>
-                      <div className='flex items-center gap-1'>
-                        <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                {jobs.length > 0 ? (
+                  jobs.map((job, index) => (
+                    <tr key={job._id} className='hover:bg-gray-50 transition-colors duration-150'>
+                      <td className='px-6 py-4 text-gray-600'>{index + 1}</td>
+                      <td className='px-6 py-4'>
+                        <div className='font-medium text-gray-800'>{job.title}</div>
+                        <div className='text-sm text-gray-500'>{job.category}</div>
+                      </td>
+                      <td className='px-6 py-4 text-gray-700'>{job.location}</td>
+                      <td className='px-6 py-4 text-gray-700'>{formatDate(job.date || job.createdAt)}</td>
+                      <td className='px-6 py-4'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800'>
+                          {job.applicants || 0} applicants
+                        </span>
+                      </td>
+                      <td className='px-6 py-4'>
+                        <div className='flex gap-2'>
+                          <button
+                            onClick={() => navigate(`/add-job?id=${job._id}`)}
+                            className='text-blue-600 hover:text-blue-700 font-medium text-sm px-3 py-1 rounded hover:bg-blue-50 transition-colors'
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(job._id)}
+                            className='text-red-600 hover:text-red-700 font-medium text-sm px-3 py-1 rounded hover:bg-red-50 transition-colors'
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan='6' className='px-6 py-12 text-center'>
+                      <div className='text-gray-500'>
+                        <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        {job.location}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 text-gray-600'>{formatDate(job.date)}</td>
-                    <td className='px-6 py-4'>
-                      <span className='inline-flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium'>
-                        {job.applicants} applicants
-                      </span>
-                    </td>
-                    <td className='px-6 py-4'>
-                      <div className='flex items-center gap-2'>
-                        <button className='text-blue-600 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors'>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </button>
-                        <button className='text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg transition-colors'>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(job._id)}
-                          className='text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors'
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        <p className='text-lg font-medium'>No jobs posted yet</p>
+                        <p className='text-sm text-gray-400 mt-1'>Start by posting your first job</p>
+                        <Link to='/add-job' className='inline-block mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium'>
+                          Post New Job
+                        </Link>
                       </div>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

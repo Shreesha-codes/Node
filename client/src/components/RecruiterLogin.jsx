@@ -1,8 +1,13 @@
 import React, { useState } from 'react'
 import { assets } from '../assets/assets'
+import { companyAPI } from '../services/api'
+import { toast } from 'react-toastify'
+import { useNavigate } from 'react-router-dom'
 
 const RecruiterLogin = ({ isOpen, onClose }) => {
+  const navigate = useNavigate()
   const [isSignUp, setIsSignUp] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -17,9 +22,57 @@ const RecruiterLogin = ({ isOpen, onClose }) => {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
+    setLoading(true)
+
+    try {
+      if (isSignUp) {
+        // Register new company
+        const response = await companyAPI.register({
+          name: formData.companyName,
+          email: formData.email,
+          password: formData.password
+        })
+
+        if (response.success) {
+          toast.success('Account created successfully! Please login.')
+          // Store token in localStorage
+          localStorage.setItem('companyToken', response.data.token)
+          localStorage.setItem('companyData', JSON.stringify(response.data.company))
+          // Switch to login view
+          setIsSignUp(false)
+          // Reset form
+          setFormData({ name: '', email: '', password: '', companyName: '' })
+          // Navigate to dashboard after short delay
+          setTimeout(() => {
+            onClose()
+            navigate('/dashboard')
+          }, 1000)
+        }
+      } else {
+        // Login existing company
+        const response = await companyAPI.login({
+          email: formData.email,
+          password: formData.password
+        })
+
+        if (response.success) {
+          toast.success('Login successful!')
+          // Store token in localStorage
+          localStorage.setItem('companyToken', response.data.token)
+          localStorage.setItem('companyData', JSON.stringify(response.data.company))
+          // Close modal and navigate to dashboard
+          onClose()
+          navigate('/dashboard')
+        }
+      }
+    } catch (error) {
+      console.error('Authentication error:', error)
+      toast.error(error.message || 'Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!isOpen) return null
@@ -134,9 +187,10 @@ const RecruiterLogin = ({ isOpen, onClose }) => {
 
           <button
             type='submit'
-            className='w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition-all duration-200 mt-2'
+            disabled={loading}
+            className='w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition-all duration-200 mt-2 disabled:bg-blue-400 disabled:cursor-not-allowed'
           >
-            {isSignUp ? 'Create Account' : 'Login'}
+            {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Login')}
           </button>
         </form>
 
